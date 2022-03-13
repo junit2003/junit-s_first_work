@@ -28,9 +28,7 @@ def finddate(url):
     date=soup.find(attrs={"name":"citation_online_date"})['content']
     return date
 
-def read(x,s,max):
-    f = open("out.txt","w",encoding='utf-8')  
-    url = 'https://arxiv.org/list/cs.AI/22?show=1000'+x
+def read(url,s,max,cursor,db):#存储搜到的记录
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
     content = soup.dl
@@ -45,20 +43,38 @@ def read(x,s,max):
         subjects = subjects.replace('\n', '')
         subject_split = subjects.split('; ')
         list_subject_split.append(subject_split)
-    for i in range(1000):
-        strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '        
+    for i in range(2000):
+        sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
+        strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
+        tags=''        
         for subject in list_subject_split[i]:
             strp=strp+subject+' '
+            tags+=acq(subject)+' '
+        title=list_title[i].text.split('Title: ', maxsplit=1)[1]
+        title=title.split('\n')[0]
+        authors=''
+        for author in list_authors[i].text.split('\n'):
+            if author !='' and author!='Authors:':
+                authors+=author
         url='https://arxiv.org/abs/'+list_ids[i].text.split('arXiv:',maxsplit=1)[1]
-        #date=finddate(url)
+        date=finddate(url)
+        url='https://arxiv.org/pdf/' + list_ids[i].text
+        try:
+            cursor.execute(sql%(list_ids[i].text,title,authors,date,tags,url))
+            db.commit()
+        except:
+            db.rollback()
         #strp=strp+'\ndate: '+date
-        f.write(strp)
+        #f.write(strp)
+        #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         print(s*1000+i+1)#输出记录了多少文件
+        time.sleep(1)
         if s*1000+i+1==max:#输出完了就停止
             break
+    print("completed")
 
-def callen():
-    url = 'https://arxiv.org/list/cs.AI/22?show=10'
+def callen(y):#找到文章总数
+    url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=10'
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
     rec=soup.find('small')
@@ -70,14 +86,84 @@ def callen():
         sum=sum*10
         sum+=int(i)
     return sum
+
+
+def download(y,x,n,s):#y是年份，n是下载几份
+    url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=1000'+x
+    html = get_one_page(url)
+    soup = BeautifulSoup(html, features='html.parser')
+    content = soup.dl
+    list_ids = content.find_all('a', title = 'Abstract')
+    list_title = content.find_all('div', class_ = 'list-title mathjax')
+    for i in range(n):
+        (paper_id,paper_title)=(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
+        r = requests.get('https://arxiv.org/pdf/' + paper_id) 
+        while r.status_code == 403:
+            time.sleep(500 + random.uniform(0, 500))
+            r = requests.get('https://arxiv.org/pdf/' + paper_id)
+        print(r.status_code)
+        paper_id = paper_id.split('arXiv:',maxsplit=1)[1]
+        pdfname = paper_title.replace("/", "_")   #pdf名中不能出现/和：
+        pdfname = pdfname.replace("?", "_")
+        pdfname = pdfname.replace("\"", "_")
+        pdfname = pdfname.replace("*","_")
+        pdfname = pdfname.replace(":","_")
+        pdfname = pdfname.replace("\n","")
+        pdfname = pdfname.replace("\r","")
+        print('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id, paper_title))
+        with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
+           code.write(r.content)
+        print(s*1000+i+1)
+
+def acq(subject):
+    str=''
+    flag=0
+    for c in subject:
+        if c=='(':
+            flag=1
+            continue
+        if c==')':
+            break
+        if flag==1:
+            str+=c
+    return str
+
 def main():
-    length=callen()
+    db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
+    cursor=db.cursor()
+    #f = open("out.txt","w",encoding='utf-8') 
+    for y in range(21,22):
+        length=callen(y)
+        for i in range(floor(length/2000)+1):
+            if i==0:
+                x=""
+            else:
+                x="&skip="+str(i*2000)
+            url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=2000'+x
+            read(url,i,length,cursor,db)
+    y=input('year:')
+    n=input('份数(全部下载请输入-1):')
+    y=int(y)
+    n=int(n)
+    if n==-1:
+        length=length
+    elif int(n)<length:
+        length=n
+    else:
+        length=length
+    l=length
     for i in range(floor(length/1000)+1):
         if i==0:
             x=""
         else:
             x="&skip="+str(i*1000)
-        read(x,i,length)
+        if l>=1000:
+            l-=1000
+            download(y,x,1000,i)
+        else:
+            download(y,x,l,i)
+    db.close()
+
 
 if __name__ == '__main__':
     main()
