@@ -22,12 +22,6 @@ def get_one_page(url):
         return response.text
     return None
 
-def finddate(url):
-    html = get_one_page(url)
-    soup = BeautifulSoup(html, features='html.parser')
-    date=soup.find(attrs={"name":"citation_online_date"})['content']
-    return date
-
 def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
@@ -108,6 +102,7 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         if s*2000+i+1==max:#输出完了就停止
             print(str(y)+" completed")
+            print(s*2000+i+1)
             break
 
 
@@ -129,32 +124,6 @@ def callen(y):#找到文章总数
     return sum
 
 
-def download(y,x,n,s):#y是年份，n是下载几份
-    url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=1000'+x
-    html = get_one_page(url)
-    soup = BeautifulSoup(html, features='html.parser')
-    content = soup.dl
-    list_ids = content.find_all('a', title = 'Abstract')
-    list_title = content.find_all('div', class_ = 'list-title mathjax')
-    for i in range(n):
-        (paper_id,paper_title)=(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
-        r = requests.get('https://arxiv.org/pdf/' + paper_id) 
-        while r.status_code == 403:
-            time.sleep(500 + random.uniform(0, 500))
-            r = requests.get('https://arxiv.org/pdf/' + paper_id)
-        print(r.status_code)
-        paper_id = paper_id.split('arXiv:',maxsplit=1)[1]
-        pdfname = paper_title.replace("/", "_")   #pdf名中不能出现/和：
-        pdfname = pdfname.replace("?", "_")
-        pdfname = pdfname.replace("\"", "_")
-        pdfname = pdfname.replace("*","_")
-        pdfname = pdfname.replace(":","_")
-        pdfname = pdfname.replace("\n","")
-        pdfname = pdfname.replace("\r","")
-        print('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id, paper_title))
-        with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
-           code.write(r.content)
-        print(s*2000+i+1)
 
 def acq(subject):#提取领域
     str=''

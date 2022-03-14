@@ -42,7 +42,7 @@ def refdb(x,s,max,cursor,db):
     num=num.split('#item')[1]
     num=int(num)
     num-=1#最新一天的论文数量
-    read(urlfin,s,num,cursor,db)
+    read(urlfin,s,num,cursor,db,22)
 
 
 def main():
