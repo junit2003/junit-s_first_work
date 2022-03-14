@@ -28,7 +28,7 @@ def finddate(url):
     date=soup.find(attrs={"name":"citation_online_date"})['content']
     return date
 
-def read(url,s,max,cursor,db):#存储搜到的记录
+def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
     content = soup.dl
@@ -36,45 +36,86 @@ def read(url,s,max,cursor,db):#存储搜到的记录
     list_title = content.find_all('div', class_ = 'list-title mathjax')
     list_authors = content.find_all('div', class_ = 'list-authors')
     list_subjects = content.find_all('div', class_ = 'list-subjects')
-    list_subject_split = []
+    list_subject_split = []#收集领域的列表
     for subjects in list_subjects:
+        subs=''
         subjects = subjects.text.split(': ', maxsplit=1)[1]
         subjects = subjects.replace('\n\n', '')
         subjects = subjects.replace('\n', '')
         subject_split = subjects.split('; ')
-        list_subject_split.append(subject_split)
-    for i in range(2000):
-        sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
-        strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
-        tags=''        
-        for subject in list_subject_split[i]:
-            strp=strp+subject+' '
-            tags+=acq(subject)+' '
-        title=list_title[i].text.split('Title: ', maxsplit=1)[1]
-        title=title.split('\n')[0]
+        try:
+            for subject in subject_split:
+                subs+=subject+' '
+            list_subject_split.append(subs)
+        except:
+            continue
+    ids=[]#收集序号的列表
+    for id in list_ids:
+        try:
+            ids.append(id.text)
+        except:
+            continue
+    titles=[]#收集标题的列表
+    for title in list_title:
+        try:
+            titles.append(title.text.split('Title: ', maxsplit=1)[1].split('\n')[0])
+        except:
+            continue
+    l_authors=[]#收集作者的列表
+    for l_au in list_authors:
         authors=''
-        for author in list_authors[i].text.split('\n'):
+        for author in l_au.text.split('\n'):
             if author !='' and author!='Authors:':
                 authors+=author
-        url='https://arxiv.org/abs/'+list_ids[i].text.split('arXiv:',maxsplit=1)[1]
-        date=finddate(url)
-        url='https://arxiv.org/pdf/' + list_ids[i].text
         try:
-            cursor.execute(sql%(list_ids[i].text,title,authors,date,tags,url))
+            l_authors.append(authors)
+        except:
+            continue
+    for i in range(2000):
+        sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
+        #strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
+        try:
+            if ids[i].find('cs')==-1:
+                dt=ids[i].split('arXiv:')[1]
+                address='https://arxiv.org/pdf/'+dt
+            else:
+                try:
+                    id=ids[i].split('arXiv:cs/')[1]
+                except:
+                    print(s*2000+i+1)
+                    continue
+                dt=''
+                for j in range(4):
+                    dt+=(id[j])
+                address='https://arxiv.org/pdf/cs/'+id+'.pdf'
+        except:
+            print(str(y)+'error')
+            print(s*2000+i+1)
+            break
+        date='19'
+        for j in range(2):
+            date+=dt[j]
+        date+='/'
+        for j in range (2,4):
+            date+=dt[j]
+        try:
+            cursor.execute(sql%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
             db.commit()
         except:
             db.rollback()
         #strp=strp+'\ndate: '+date
         #f.write(strp)
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
-        print(s*1000+i+1)#输出记录了多少文件
-        time.sleep(1)
-        if s*1000+i+1==max:#输出完了就停止
+        if s*2000+i+1==max:#输出完了就停止
+            print(str(y)+" completed")
             break
-    print("completed")
+
 
 def callen(y):#找到文章总数
-    url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=10'
+    if y<10:
+        url = 'https://arxiv.org/list/cs.AI/0'+str(y)+'?show=10'
+    else:
+        url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=10'
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
     rec=soup.find('small')
@@ -113,9 +154,9 @@ def download(y,x,n,s):#y是年份，n是下载几份
         print('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id, paper_title))
         with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
            code.write(r.content)
-        print(s*1000+i+1)
+        print(s*2000+i+1)
 
-def acq(subject):
+def acq(subject):#提取领域
     str=''
     flag=0
     for c in subject:
@@ -132,36 +173,18 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     #f = open("out.txt","w",encoding='utf-8') 
-    for y in range(21,22):
+    for y in range(12,23):
         length=callen(y)
         for i in range(floor(length/2000)+1):
             if i==0:
                 x=""
             else:
                 x="&skip="+str(i*2000)
-            url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=2000'+x
-            read(url,i,length,cursor,db)
-    y=input('year:')
-    n=input('份数(全部下载请输入-1):')
-    y=int(y)
-    n=int(n)
-    if n==-1:
-        length=length
-    elif int(n)<length:
-        length=n
-    else:
-        length=length
-    l=length
-    for i in range(floor(length/1000)+1):
-        if i==0:
-            x=""
-        else:
-            x="&skip="+str(i*1000)
-        if l>=1000:
-            l-=1000
-            download(y,x,1000,i)
-        else:
-            download(y,x,l,i)
+            if y<10:
+                url = 'https://arxiv.org/list/cs.AI/0'+str(y)+'?show=2000'+x
+            else:
+                url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=2000'+x
+            read(url,i,length,cursor,db,y)
     db.close()
 
 

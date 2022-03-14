@@ -29,61 +29,72 @@ def finddate(url):
     return date
 
 def read(x,s,max,cursor,db):
-    url = 'https://arxiv.org/list/cs.AI/22?show=1000'+x
+    url = 'https://arxiv.org/search/?searchtype=all&query=cs.AI&abstracts=show&size=200&order=-announced_date_first&date-date_type=submitted_date&start='+x
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
-    content = soup.dl
-    list_ids = content.find_all('a', title = 'Abstract')
-    list_title = content.find_all('div', class_ = 'list-title mathjax')
-    list_authors = content.find_all('div', class_ = 'list-authors')
-    list_subjects = content.find_all('div', class_ = 'list-subjects')
-    list_subject_split = []
+
+    tag_ids = soup.find_all('p', class_="list-title is-inline-block")
+    list_ids=[]#收集序号的列表
+    for id in tag_ids:
+        list_ids.append(id.text.split('\n')[0])
+    tags_title = soup.find_all('p', class_="title is-5 mathjax")
+    list_title=[]#收集标题的列表
+    for title in tags_title:
+        list_title.append(title.text.split('\n')[2].split('        ')[1])
+    tags_authors = soup.find_all('p', class_="authors")
+    list_authors=[]#收集作者的列表
+    for authors in tags_authors:
+        list_authors.append(authors.text.replace('\n', '').replace('             ','').replace('Authors:',''))
+    list_subjects = soup.find_all('div', class_="tags is-inline-block")
+    list_subject_split = []#收集领域的列表
     for subjects in list_subjects:
-        subjects = subjects.text.split(': ', maxsplit=1)[1]
+        subjects = subjects.text
         subjects = subjects.replace('\n\n', '')
-        subjects = subjects.replace('\n', '')
-        subject_split = subjects.split('; ')
-        list_subject_split.append(subject_split)
-    for i in range(3):
-        sql='INSERT INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
-        strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
-        tags=''        
-        for subject in list_subject_split[i]:
-            strp=strp+subject+' '
-            tags+=acq(subject)+' '
-        title=list_title[i].text.split('Title: ', maxsplit=1)[1]
-        title=title.split('\n')[0]
-        authors=''
-        for author in list_authors[i].text.split('\n'):
-            if author !='' and author!='Authors:':
-                authors+=author
-        url='https://arxiv.org/abs/'+list_ids[i].text.split('arXiv:',maxsplit=1)[1]
-        date=finddate(url)
+        subjects = subjects.replace('\n', ' ')
+        list_subject_split.append(subjects)
+    tags_date=soup.find_all('p', class_="is-size-7")
+    list_date=[]#收集提交日期的列表
+    for date in tags_date:
         try:
-            cursor.execute(sql%(list_ids[i].text,title,authors,date,tags,url))
+            list_date.append(date.text.split('\n')[0].split('Submitted ')[1].split('; ')[0])
+        except:
+            continue
+    for i in range(200):
+        if list_subject_split[i].find('cs.AI')==-1:
+            continue
+        #strp=''
+        sql='INSERT INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
+        #strp+=list_ids[2]+list_title[2]+list_authors[2]+list_subject_split[2]+' '+list_date[2]
+        if list_ids[i].find('cs')==-1:
+            address='https://arxiv.org/pdf/'+list_ids[i].split('arXiv:')[1]
+        else:
+            id=list_ids[i].split('arXiv:cs/')[1]
+            dt=''
+            for i in range(4):
+                dt.append(id[i])
+            address='https://arxiv.org/ftp/cs/papers/'+dt+'/'+id+'.pdf'
+        try:
+            cursor.execute(sql%(list_ids[i],list_title[i],list_authors[i],list_subject_split[i],list_date[i],address))
             db.commit()
         except:
             db.rollback()
-        #strp=strp+'\ndate: '+date
+        #print(strp)
         #f.write(strp)
-        #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         print(s*1000+i+1)#输出记录了多少文件
         if s*1000+i+1==max:#输出完了就停止
             break
     print("completed")
 
 def callen():#找到文章总数
-    url = 'https://arxiv.org/list/cs.AI/22?show=10'
+    url = 'https://arxiv.org/search/?searchtype=all&query=cs.AI&abstracts=show&size=200&order=-announced_date_first&date-date_type=submitted_date&start=0'
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
-    rec=soup.find('small')
-    for sub in rec:
-        num=re.findall(r"\d",sub.text)
-        break
+    rec=soup.find('h1', class_="title is-clearfix")
+    rec=(rec.text.split('of ')[1].split(' result')[0].split(','))
     sum=0
-    for i in num:
-        sum=sum*10
-        sum+=int(i)
+    for num in rec:
+        sum*=1000
+        sum+=int(num)
     return sum
 
 
@@ -122,14 +133,13 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     length=callen()
-    length=0
     #f = open("out.txt","w",encoding='utf-8') 
-    for i in range(floor(length/1000)+1):
+    for i in range(floor(length/200)+1):
         if i==0:
             x=""
         else:
-            x="&skip="+str(i*1000)
-        read(x,i,length,cursor,db)
+            x=i*200
+        read(str(x),i,length,cursor,db)
     db.close()
 
 
