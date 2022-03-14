@@ -11,6 +11,7 @@ import random
 import smtplib
 from smtplib import SMTP
 from demo import get_one_page, read ,callen
+#进行下载
 def main():
     
     y=input('year:')
