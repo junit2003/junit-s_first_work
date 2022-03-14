@@ -15,7 +15,7 @@ from demo import get_one_page, read ,callen
 def main():
     
     y=input('year:')
-    length=callen(y)
+    length=callen(int(y))
     n=input('份数(全部下载请输入-1):')
     y=int(y)
     n=int(n)
@@ -63,3 +63,7 @@ def download(y,x,n,s):#y是年份，n是下载几份
         with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
            code.write(r.content)
         print(s*2000+i+1)
+
+if __name__ == '__main__':
+    main()
+    time.sleep(1)

@@ -22,7 +22,8 @@ def get_one_page(url):
         return response.text
     return None
 
-def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
+def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
+    f = open("out.txt","w",encoding='utf-8') 
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
     content = soup.dl
@@ -65,8 +66,8 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
             l_authors.append(authors)
         except:
             continue
-    for i in range(2000):
-        sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
+    for i in range(1):
+        #sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
         #strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
         try:
             if ids[i].find('cs')==-1:
@@ -86,17 +87,15 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
             print(str(y)+'error')
             print(s*2000+i+1)
             break
-        date='19'
+        date='20'
         for j in range(2):
             date+=dt[j]
         date+='/'
         for j in range (2,4):
             date+=dt[j]
-        try:
-            cursor.execute(sql%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
-            db.commit()
-        except:
-            db.rollback()
+        strp='id:\'%s\' title:\'%s\' Authors:\'%s\' time:\'%s\' subject:\'%s\' address:\'%s\''
+        f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
+        download_one(address,ids[i],titles[i])
         #strp=strp+'\ndate: '+date
         #f.write(strp)
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
@@ -123,7 +122,22 @@ def callen(y):#找到文章总数
         sum+=int(i)
     return sum
 
-
+def download_one(url,paper_id,paper_title):
+        r = requests.get(url) 
+        while r.status_code == 403:
+            time.sleep(500 + random.uniform(0, 500))
+            r = requests.get(url)
+        paper_id = paper_id.split('arXiv:',maxsplit=1)[1]
+        pdfname = paper_title.replace("/", "_")   #pdf名中不能出现/和：
+        pdfname = pdfname.replace("?", "_")
+        pdfname = pdfname.replace("\"", "_")
+        pdfname = pdfname.replace("*","_")
+        pdfname = pdfname.replace(":","_")
+        pdfname = pdfname.replace("\n","")
+        pdfname = pdfname.replace("\r","")
+        print('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id, paper_title))
+        with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
+           code.write(r.content)
 
 def acq(subject):#提取领域(cs.AI)
     str=''
@@ -142,7 +156,7 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     #f = open("out.txt","w",encoding='utf-8') 
-    for y in range(12,23):
+    for y in range(18,19):
         length=callen(y)
         for i in range(floor(length/2000)+1):
             if i==0:
@@ -153,7 +167,7 @@ def main():
                 url = 'https://arxiv.org/list/cs.AI/0'+str(y)+'?show=2000'+x
             else:
                 url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=2000'+x
-            read(url,i,length,cursor,db,y)
+            read(url,i,length,y)
     db.close()
 
 
