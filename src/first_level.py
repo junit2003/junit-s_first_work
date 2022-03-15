@@ -66,7 +66,7 @@ def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问�
             l_authors.append(authors)
         except:
             continue
-    for i in range(1):
+    for i in range(3):
         #sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
         #strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
         try:
@@ -93,9 +93,10 @@ def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问�
         date+='/'
         for j in range (2,4):
             date+=dt[j]
-        strp='id:\'%s\' title:\'%s\' Authors:\'%s\' time:\'%s\' subject:\'%s\' address:\'%s\''
+        strp='id:\'%s\' title:\'%s\' Authors:\'%s\' time:\'%s\' subject:\'%s\' address:\'%s\'\n'
         f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
         download_one(address,ids[i],titles[i])
+        print(i+1)
         #strp=strp+'\ndate: '+date
         #f.write(strp)
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
@@ -158,6 +159,7 @@ def main():
     #f = open("out.txt","w",encoding='utf-8') 
     for y in range(18,19):
         length=callen(y)
+        length=0
         for i in range(floor(length/2000)+1):
             if i==0:
                 x=""

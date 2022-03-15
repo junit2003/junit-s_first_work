@@ -66,8 +66,8 @@ def searchweek(keyword,db):
 def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     k = input("input:")
-    #searchword(k,db)
-    searchauthor(k,db)
+    searchword(k,db)
+    #searchauthor(k,db)
     #searchtime(k,db)
     #searchweek(k,db)
     db.close()

@@ -69,12 +69,12 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
         sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
         #strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
         try:
-            if ids[i].find('cs')==-1:
+            if ids[i].find('/')==-1:
                 dt=ids[i].split('arXiv:')[1]
                 address='https://arxiv.org/pdf/'+dt
             else:
                 try:
-                    id=ids[i].split('arXiv:cs/')[1]
+                    id=ids[i][-7:]
                 except:
                     print(s*2000+i+1)
                     continue
@@ -83,10 +83,10 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
                     dt+=(id[j])
                 address='https://arxiv.org/pdf/cs/'+id+'.pdf'
         except:
-            print(str(y)+'error')
+            print(str(y)+' error')
             print(s*2000+i+1)
             break
-        date='19'
+        date='20'
         for j in range(2):
             date+=dt[j]
         date+='/'
@@ -102,7 +102,6 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         if s*2000+i+1==max:#输出完了就停止
             print(str(y)+" completed")
-            print(s*2000+i+1)
             break
 
 
@@ -121,6 +120,8 @@ def callen(y):#找到文章总数
     for i in num:
         sum=sum*10
         sum+=int(i)
+    if y==11:
+        sum-=3
     return sum
 
 
@@ -142,7 +143,7 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     #f = open("out.txt","w",encoding='utf-8') 
-    for y in range(12,23):
+    for y in range(0,4):
         length=callen(y)
         for i in range(floor(length/2000)+1):
             if i==0:
