@@ -66,7 +66,7 @@ def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问�
             l_authors.append(authors)
         except:
             continue
-    for i in range(3):
+    for i in range(2000):
         #sql='REPLACE INTO aipapers(id,title,authors,date,tags,address) values(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')'
         #strp='\n\nid: '+list_ids[i].text+'\n'+list_title[i].text.split('\n', maxsplit=2)[1]+list_authors[i].text+'tag: '
         try:
@@ -94,9 +94,10 @@ def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问�
         for j in range (2,4):
             date+=dt[j]
         strp='id:\'%s\' title:\'%s\' Authors:\'%s\' time:\'%s\' subject:\'%s\' address:\'%s\'\n'
-        f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
-        download_one(address,ids[i],titles[i])
-        print(i+1)
+        #f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
+        num=s*2000+i+1
+        download_one(address,ids[i],titles[i],num)
+        print(s*2000+i+1)
         #strp=strp+'\ndate: '+date
         #f.write(strp)
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
@@ -123,7 +124,7 @@ def callen(y):#找到文章总数
         sum+=int(i)
     return sum
 
-def download_one(url,paper_id,paper_title):
+def download_one(url,paper_id,paper_title,num):
         r = requests.get(url) 
         while r.status_code == 403:
             time.sleep(500 + random.uniform(0, 500))
@@ -137,7 +138,7 @@ def download_one(url,paper_id,paper_title):
         pdfname = pdfname.replace("\n","")
         pdfname = pdfname.replace("\r","")
         print('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id, paper_title))
-        with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%(paper_id,pdfname), "wb") as code:    
+        with open('D:/git_work1/Artificial Intelligence'+'/%s %s.pdf'%('2020.',num), "wb") as code:    
            code.write(r.content)
 
 def acq(subject):#提取领域(cs.AI)
@@ -157,9 +158,8 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     #f = open("out.txt","w",encoding='utf-8') 
-    for y in range(18,19):
+    for y in range(20,21):
         length=callen(y)
-        length=0
         for i in range(floor(length/2000)+1):
             if i==0:
                 x=""

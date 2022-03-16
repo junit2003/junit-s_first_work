@@ -1,3 +1,0 @@
-id:'arXiv:1801.00218' title:'Game-theoretic Network Centrality: A Review' Authors:'Mateusz K. Tarkowski, Tomasz P. Michalak, Talal Rahwan, Michael Wooldridge' time:'2018/01' subject:'Artificial Intelligence (cs.AI) Computer Science and Game Theory (cs.GT) ' address:'https://arxiv.org/pdf/1801.00218'
-id:'arXiv:1801.00345' title:'Users Constraints in Itemset Mining' Authors:'Christian Bessiere, Nadjib Lazaar, Yahia Lebbah, Mehdi Maamar' time:'2018/01' subject:'Artificial Intelligence (cs.AI) Databases (cs.DB) ' address:'https://arxiv.org/pdf/1801.00345'
-id:'arXiv:1801.00361' title:'SenseNet: 3D Objects Database and Tactile Simulator' Authors:'Jason Toy' time:'2018/01' subject:'Artificial Intelligence (cs.AI) Robotics (cs.RO) ' address:'https://arxiv.org/pdf/1801.00361'
