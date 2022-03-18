@@ -13,6 +13,7 @@ from smtplib import SMTP
 
 
 def get_one_page(url):
+    time.sleep(1)
     response = requests.get(url)
     while response.status_code == 403:
         time.sleep(500 + random.uniform(0, 500))
@@ -92,17 +93,29 @@ def read(url,s,max,cursor,db,y):#存储搜到的记录url是访问的网页，s�
         date+='/'
         for j in range (2,4):
             date+=dt[j]
-        try:
-            cursor.execute(sql%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
-            db.commit()
-        except:
-            db.rollback()
+        titles_l=titles[i].split('\'')
+        titles[i]=''
+        for tt in titles_l:
+            titles[i]+=tt
+        author_l=l_authors[i].split('\'')
+        l_authors[i]=''
+        for tt in author_l:
+            l_authors[i]+=tt
+        tryinsert(sql,ids[i],titles[i],l_authors[i],date,list_subject_split[i],address,db,cursor)        
         #strp=strp+'\ndate: '+date
         #f.write(strp)
         #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         if s*2000+i+1==max:#输出完了就停止
-            print(str(y)+" completed")
+            print("20{:0>2d} completed".format(y))
             break
+
+def tryinsert(sql,id,title,author,date,subject,address,db,cursor):#insert的函数
+    try:
+            cursor.execute(sql%(id,title,author,date,subject,address))
+            db.commit()
+    except:
+            db.rollback()
+            print(sql%(id,title,author,date,subject,address))#没输进去查错用
 
 
 def callen(y):#找到文章总数
@@ -143,7 +156,7 @@ def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
     cursor=db.cursor()
     #f = open("out.txt","w",encoding='utf-8') 
-    for y in range(0,4):
+    for y in range(0,23):
         length=callen(y)
         for i in range(floor(length/2000)+1):
             if i==0:

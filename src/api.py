@@ -24,7 +24,7 @@ def searchauthor(keyword,db):
         i=0
         for result in results:
             i+=1
-            print('number '+str(i))
+            print('num '+str(i))
             print(result)
     except:
         print('Error')
@@ -41,12 +41,12 @@ def searchtime(keyword,db):
         i=0
         for result in results:
             i+=1
-            print('number '+str(i))
+            print('num '+str(i))
             print(result)
     except:
         print('Error')
 
-def searchweek(keyword,db):
+def searchyear(keyword,db):
     cursor=db.cursor()
     sql='SELECT * from aipapers WHERE POSITION(\'%s\' IN date);'
     try:
@@ -57,7 +57,7 @@ def searchweek(keyword,db):
         i=0
         for result in results:
             i+=1
-            print('number '+str(i))
+            print('num '+str(i))
             print(result)
     except:
         print('Error')
@@ -65,11 +65,16 @@ def searchweek(keyword,db):
 
 def main():
     db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
-    k = input("input:")
-    searchword(k,db)
-    #searchauthor(k,db)
-    #searchtime(k,db)
-    #searchweek(k,db)
+    type=input("type:")
+    k = input("keyword:")
+    if type=='1':
+        searchword(k,db)
+    if type=='2':
+        searchauthor(k,db)
+    if type=='3':
+        searchtime(k,db)
+    if type=='4':
+        searchyear(k,db)
     db.close()
     
 

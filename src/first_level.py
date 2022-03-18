@@ -22,7 +22,7 @@ def get_one_page(url):
         return response.text
     return None
 
-def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
+def read(url,s,max,y,f):#存储搜到的记录url是访问的网页，s是访问第几次，max是最多几个
     f = open("out.txt","w",encoding='utf-8') 
     html = get_one_page(url)
     soup = BeautifulSoup(html, features='html.parser')
@@ -94,13 +94,10 @@ def read(url,s,max,y):#存储搜到的记录url是访问的网页，s是访问�
         for j in range (2,4):
             date+=dt[j]
         strp='id:\'%s\' title:\'%s\' Authors:\'%s\' time:\'%s\' subject:\'%s\' address:\'%s\'\n'
-        #f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
+        f.write(strp%(ids[i],titles[i],l_authors[i],date,list_subject_split[i],address))
         num=s*2000+i+1
         download_one(address,ids[i],titles[i],num)
         print(s*2000+i+1)
-        #strp=strp+'\ndate: '+date
-        #f.write(strp)
-        #download(list_ids[i].text,list_title[i].text.split('\n', maxsplit=2)[1])
         if s*2000+i+1==max:#输出完了就停止
             print(str(y)+" completed")
             print(s*2000+i+1)
@@ -155,11 +152,14 @@ def acq(subject):#提取领域(cs.AI)
     return str
 
 def main():
-    db=pymysql.connect(host='localhost',user='root',password='76787678',port=3306,db='spiders')
-    cursor=db.cursor()
-    #f = open("out.txt","w",encoding='utf-8') 
+    f = open("out.txt","w",encoding='utf-8') 
     for y in range(20,21):
+        print(y)
+        l=int(input("份数：(-1则打印全部)"))
         length=callen(y)
+        if l<=length and l>-1:
+            length=l
+        print(length)
         for i in range(floor(length/2000)+1):
             if i==0:
                 x=""
@@ -169,8 +169,7 @@ def main():
                 url = 'https://arxiv.org/list/cs.AI/0'+str(y)+'?show=2000'+x
             else:
                 url = 'https://arxiv.org/list/cs.AI/'+str(y)+'?show=2000'+x
-            read(url,i,length,y)
-    db.close()
+            read(url,i,length,y,f)
 
 
 if __name__ == '__main__':
